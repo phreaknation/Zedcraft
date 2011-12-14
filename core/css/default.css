@@ -1,0 +1,15 @@
+@CHARSET "ISO-8859-1";
+body {
+    background-color: #000;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#gamewindow {
+    display: none;
+    left: 0;
+    position: absolute;
+    top: 0;
+    z-Index: -1;
+}
