@@ -243,7 +243,7 @@ XMLdoc.onLoad = function(){
 			}
 	*/
 	
-	
+	/*
 	var selectedObject;
 	var selectObject = function(obj) {
 		var credit = document.getElementById("credit");
@@ -311,21 +311,21 @@ XMLdoc.onLoad = function(){
 			selectObject(lastPick);
 		mousechange=false;
 	};
-	
+	*/
 	$(window).resize();
 	setInterval(function() {
 		var now=+new Date;
-		picking();
+		//picking();
 		renderer.render();
 		lasttime=now;
 		
-		requestAnimationFrame(render);
+		//requestAnimationFrame(render);
 		
 		if ($('#gamewindow').css({'display': 'none'}))
 			$('#gamewindow').show();
 	}, 16);
 	
-	requestAnimationFrame(render);
+	//requestAnimationFrame(render);
 };
 
 XMLdoc.load("res/test/stage.xml");
