@@ -9,7 +9,18 @@ body {
 #gamewindow {
     display: none;
     left: 0;
+    min-height: 64;
+    min-width: 64;
     position: absolute;
     top: 0;
     z-Index: -1;
+}
+
+#infopan {
+    background-color: rgba(128, 128, 128, 0.5);
+    display: inline-block;
+    left: 50px;
+    min-width: 200px;
+    position: absolute;
+    top: 50px;
 }

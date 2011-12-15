@@ -1,18 +1,18 @@
 //
-//	Entine Specific Variables 
+//	Engine Specific Variables 
 //
 var XMLdoc = new GLGE.Document();
 var canvas = document.getElementById("gamewindow");
-var gameSize = ({'width': canvas.offsetWidth, 'height': canvas.offsetheight});
+var gameSize = ({'width': parseInt(canvas.offsetWidth), 'height': parseInt(canvas.offsetHeight) });
 var renderer = new GLGE.Renderer(canvas);
 var objects = new Array();
 	objects['models'] = new Array();
+	objects['cameras'] = new Array();
 var scene;
 
 //
 // Camera Specific Variables 
 //
-var camera;
 var cameraMatrix;
 var cameraModes = ({
 	0: "God View",		// Similar to Sim games and strategy.
@@ -24,26 +24,31 @@ var cameraPos = [0,0,0];
 //
 // Mouse Specific Variables 
 //
-var mousePos = ({ 'x': 0, 'y': 0 });
-var mousePosPrev = ({ 'x': 0, 'y': 0 });
+var mouseEnabled = false;
+var mousePos = ({ 'x': 32, 'y': 32 });
+var mousePosPrev =  ({ 'x': 32, 'y': 32 });
 var mouseDirection = ({ 'hoz': 0, 'vert': 0 });
-var mouseButtons = ({ 'left': false, 'middle': false, 'right': false });
+var mouseButtons = new Array();
+var mouseWheel = 0;
 var mouseDrag = false;
-
 var mouseBumperArea = 25; // Pixel value for the mouse bumper area for start scroll
 
 //
 // Keyboard Specific Variables 
 //
-
+var keyboard = new Array();
 
 //
-// Player Specific Variables 
+// Game Specific Variables 
 //
-
+var selectedObject = null;
+var lastPick = null;
+var selectstart = null;
 //
 // Misc Specific Variables 
 //
+var debug = '';
+
 
 $(window).resize(function() {
 	$('#gamewindow').attr({
@@ -101,24 +106,24 @@ var drawGrid = function(size) {
 	delete(line);
 };
 
-XMLdoc.onLoad = function(){
+XMLdoc.onLoad = function() {
 	scene = XMLdoc.getElement("mainScene");
-	scene.setBackgroundColor('#00A000');
 	renderer.setScene(scene);
 	renderer.render();
 	
-	camera = scene.camera;
-	cameraMatrix=camera.getViewMatrix();
+	objects['cameras']['mainCamera'] = scene.camera;
+	cameraMatrix = objects['cameras']['mainCamera'].getViewMatrix();
 	cameraOffset = XMLdoc.getElement("cameraOffset");
 	cameraOffset.setLocY(60);
 	zoom = parseInt(60);
-	cameraPos = [parseInt(camera.getLocX()), 60, parseInt(camera.getLocZ())];
-
-	var player = loadCollada('player');
+	cameraPos = [parseInt(objects['cameras']['mainCamera'].getLocX()), 60, parseInt(objects['cameras']['mainCamera'].getLocZ())];
+	
+	var model = XMLdoc.getElement( "goblin" );
+	var highlight = XMLdoc.getElement( "highlight" );
+	var cusrsor = XMLdoc.getElement( "cusrsor" ); 
 	
 	var mouse = new GLGE.MouseInput(canvas);
-	//var keys = new GLGE.KeyInput();
-	
+	var keys = new GLGE.KeyInput();
 	
 	drawGrid(100);
 	
@@ -126,128 +131,185 @@ XMLdoc.onLoad = function(){
 	canvas.oncontextmenu = function() { return false; };
 	
 	$('body').children().each(function() {
-		console.log($(this));
-		$(this).mousedown(function(e){ 
-		    if( e.button == 2 ) 
-		      return false;
-		    return true; 
-		  });
+		$(this).mousedown(function(e) {
+		    if(e.button == 2)
+		    	return false;
+	    	return true; 
+		});
 	});
 	
-	canvas.onmousemove = function(e) {
-		mousePos = mouse.getMousePosition();
-		
-		if (mousePos.x - mousePosPrev.x < 0 ) { mouseDirection['hoz'] = -1; } 		// Mouse move Left
-		else if (mousePos.x - mousePosPrev.x > 0 ) { mouseDirection['hoz'] = 1; } 	// Mouse move Right
-		else { mouseDirection['hoz'] = 0; }
-		
-		if (mousePos.y - mousePosPrev.y < 0 ) { mouseDirection['vert'] = -1; } 		// Mouse move Up
-		else if (mousePos.y - mousePosPrev.y > 0 ) { mouseDirection['vert'] = 1; } 	// Mouse move Down
-		else { mouseDirection['vert'] = 0; }
-		
-		if (mouseDirection['hoz'] != 0) {
-			
-		}
-
-		if (mousePos.x <= mouseBumperArea) {
-			cameraPos[0] -= cameraMatrix[0] * 2;
-			//cameraPos[1] -= cameraMatrix[1] * 2;
-			cameraPos[2] -= cameraMatrix[2] * 2;
-		}
-		else if (mousePos.x >= ($('#gamewindow').width() - mouseBumperArea)) {
-			cameraPos[0] += cameraMatrix[0] * 2;
-			//cameraPos[1] += cameraMatrix[1] * 2;
-			cameraPos[2] += cameraMatrix[2] * 2;
-		}
-		if (mousePos.y <= mouseBumperArea) {
-			cameraPos[0] -= cameraMatrix[8] * 2;
-			//cameraPos[1] -= cameraMatrix[9] * 2;
-			cameraPos[2] -= cameraMatrix[10] * 2;
-		}
-		else if (mousePos.y >= ($('#gamewindow').height() - mouseBumperArea)) {
-			cameraPos[0] += cameraMatrix[8] * 2;
-			//cameraPos[1] += cameraMatrix[9] * 2;
-			cameraPos[2] += cameraMatrix[10] * 2;
-		}
-
-		cameraOffset.setLocX(cameraPos[0]);
-		cameraOffset.setLocZ(cameraPos[2]);
-
-		mousePosPrev = mousePos;
+	document.onkeydown = function(e) {
+		var charCode = (e.which) ? e.which : e.keyCode;
+		keyboard[charCode] = true;
 	};
 	
-	/*
+	document.onkeyup = function(e) {
+		var charCode = (e.which) ? e.which : e.keyCode;
+		keyboard[charCode] = false;
+	};
+	
 	canvas.onmousedown = function(e) {
 		e.preventDefault();
-		switch (e.button) {
-	    	case 0: //left
-	    		mouseButtons['left'] = true;
-	    		break;
-	    	case 1: //middle
-	    		mouseButtons['middle'] = true;
-	    		break;
-	    	case 2: //right
-	    		mouseButtons['right'] = true;
-	    		break;
-	    	default:
-	    		break;
-		};
+		mouseButtons[e.button] = true;
 	};
 	
 	canvas.onmouseup = function(e) {
 		e.preventDefault();
-		switch (e.button) {
-	    	case 0: //left
-	    		mouseButtons['left'] = false;
-	    		break;
-	    	case 1: //middle
-	    		mouseButtons['middle'] = false;
-	    		break;
-	    	case 2: //right
-	    		mouseButtons['right'] = false;
-	    		break;
-	    	default:
-	    		break;
-		};
+		mouseButtons[e.button] = false;
 	};
-	*/
+	
+	canvas.onmousemove = function(e) {
+		mousePos = mouse.getMousePosition();
+	};
+	
+	canvas.onmouseover = function() {
+		mouseEnabled = true;
+	};
+	
+	canvas.onmouseout = function() {
+		mouseEnabled = false;
+	};
 	
 	canvas.onmousewheel = function(e) {
-	    var delta = e.detail ? parseInt(e.detail) / 3 : parseInt(e.wheelDelta) / 300;
-	    
-	    if (delta != 0) {
-	    	var zoom = Math.max(Math.min(parseInt(camera.getFovY()) + delta, 35), 15);
-	    	camera.setFovY(zoom);
-		}
+	    mouseWheel = (e.detail) ? parseInt(e.detail) / 3 : parseInt(e.wheelDelta) / 300;
 	};
 	canvas.addEventListener('DOMMouseScroll', canvas.onmousewheel, false);
 	
-	
-	canvas.onkeypress
-	
-	/*
-		var mat=camera.getViewMatrix();
-		switch(e.keyCode){
-			case GLGE.KI_W:
+	function mouseCheck() {
+		if (!mouseEnabled)
+			return;
+		// ------------------------------------------------------ Mouse Buttons ------------------------------------------------------
+		for (button in mouseButtons) {
+			if (mouse.isButtonDown(button))
+				debug += 'Mouse Button ' + button + ': ' + mouse.isButtonDown(button) + '<br />';
 			
-			break;
-			case GLGE.KI_S:
-			
-			break;
-			case GLGE.KI_D:
-			
-			break;
-			case GLGE.KI_A:
-			
-			break;
+				if (mouse.isButtonDown(0))
+					picking();
+		}
+		
+		// -------------------------------------------------------- Mouse Wheel --------------------------------------------------------
+		if (mouseWheel != 0) {
+			debug += 'Mouse Wheel : ' + mouseWheel + '<br />';
+	    	var zoom = Math.max(Math.min(parseInt(objects['cameras']['mainCamera'].getFovY()) + mouseWheel, 35), 15);
+	    	objects['cameras']['mainCamera'].setFovY(zoom);
+		}
+		
+		// ------------------------------------------------------- Mouse X Axis -------------------------------------------------------
+		if (mousePos['x'] - mousePosPrev.x < 0 ) { mouseDirection['hoz'] = -1; } 		// Mouse move Left
+		else if (mousePos['x'] - mousePosPrev.x > 0 ) { mouseDirection['hoz'] = 1; } 	// Mouse move Right
+		else { mouseDirection['hoz'] = 0; }
+
+		if (mousePos['x'] <= mouseBumperArea) {
+			cameraPos[0] -= cameraMatrix[0] * 1;
+			//cameraPos[1] -= cameraMatrix[1] * 2;
+			cameraPos[2] -= cameraMatrix[2] * 1;
+		}
+		else if (mousePos['x'] >= ($('#gamewindow').width() - mouseBumperArea)) {
+			cameraPos[0] += cameraMatrix[0] * 1;
+			//cameraPos[1] += cameraMatrix[1] * 2;
+			cameraPos[2] += cameraMatrix[2] * 1;
+		}
+		
+		// ------------------------------------------------------- Mouse Y Axis -------------------------------------------------------
+		if (mousePos['y'] - mousePosPrev.y < 0 ) { mouseDirection['vert'] = -1; } 		// Mouse move Up
+		else if (mousePos['y'] - mousePosPrev.y > 0 ) { mouseDirection['vert'] = 1; } 	// Mouse move Down
+		else { mouseDirection['vert'] = 0; }
+		if (mousePos['y'] <= mouseBumperArea) {
+			cameraPos[0] -= cameraMatrix[8] * 2;
+			//cameraPos[1] -= cameraMatrix[9] * 2;
+			cameraPos[2] -= cameraMatrix[10] * 2;
+		}
+		else if (mousePos['y'] >= ($('#gamewindow').height() - mouseBumperArea)) {
+			cameraPos[0] += cameraMatrix[8] * 2;
+			//cameraPos[1] += cameraMatrix[9] * 2;
+			cameraPos[2] += cameraMatrix[10] * 2;
+		}
+		
+
+		// ---------------------------------------------- Update Mouse Position ----------------------------------------------
+		if (mouseEnabled) {
+			debug += 'Mouse Axis : ' + mousePos['x'] + ', ' + mousePos['y'] + '<br />';
+			cameraOffset.setLocX(cameraPos[0]);
+			cameraOffset.setLocZ(cameraPos[2]);
+			if (mousePosPrev != mousePos) {
+				mousePosPrev = mousePos;
 			}
-	*/
+		}
+	};
 	
-	/*
-	var selectedObject;
+	function keyboardCheck() {
+		for (key in keyboard) {
+			if (keys.isKeyPressed(key)) {
+				if (key==GLGE.KI_W) {
+					cameraPos[0] -= cameraMatrix[8] * 1;
+					//cameraPos[1] -= cameraMatrix[9] * 1;
+					cameraPos[2] -= cameraMatrix[10] * 1;
+				}
+				if (key==GLGE.KI_S) {
+					cameraPos[0] += cameraMatrix[8] * 1;
+					//cameraPos[1] += cameraMatrix[9] * 1;
+					cameraPos[2] += cameraMatrix[10] * 1;
+				}
+				if (key==GLGE.KI_A) {
+					cameraPos[0] -= cameraMatrix[0] * 1;
+					//cameraPos[1] -= cameraMatrix[1] * 1;
+					cameraPos[2] -= cameraMatrix[2] * 1;
+				}
+				if (key==GLGE.KI_D) {
+					cameraPos[0] += cameraMatrix[0] * 1;
+					//cameraPos[1] += cameraMatrix[1] * 1;
+					cameraPos[2] += cameraMatrix[2] * 1;
+				}
+				debug += 'Keyboard Input' + key + ': ' + keys.isKeyPressed(key) + '<br />';
+				cameraOffset.setLocX(cameraPos[0]);
+				cameraOffset.setLocZ(cameraPos[2]);
+			}
+		}
+	};
+	
+	function picking() {
+		if (!mouseEnabled)
+			return;
+		
+		var result = scene.pick(mousePos['x'], mousePos['y']);
+		if (result && result.object.id) {
+			if (!result.object.mat)
+				result.object.mat = result.object.getMaterial();
+			
+			if (lastPick != result.object) {
+				if (lastPick) lastPick.setMaterial(lastPick.mat);
+				lastPick = result.object;
+				canvas.style.cursor = "pointer";
+				result.object.setMaterial(highlight);
+			}
+			
+		}
+		else if (result && result.object) {
+			console.log(result.object);
+			if (!result.object.mat)
+				result.object.mat = result.object.getMaterial();
+			
+			if (lastPick != result.object) {
+				if (lastPick) lastPick.setMaterial(lastPick.mat);
+				lastPick = result.object;
+				canvas.style.cursor = "pointer";
+				result.object.setMaterial(highlight);
+			}
+		}
+		else {
+			if (lastPick) lastPick.setMaterial(lastPick.mat);
+			lastPick = null;
+			canvas.style.cursor="default";
+		}
+		/*
+		if (mouseEnabled)
+			selectstart = lastPick;
+		if(lastPick && mouseEnabled == false && selectstart == lastPick)
+			selectObject(lastPick);
+		*/
+	};
+	
 	var selectObject = function(obj) {
-		var credit = document.getElementById("credit");
-		var fc = credit.firstChild;
 		if(obj == selectedObject)
 			return;
 		selectedObject = obj;
@@ -255,18 +317,7 @@ XMLdoc.onLoad = function(){
 			LocX:obj.getLocX(),
 			LocZ:obj.getLocZ()
 		}, 1000);
-		
-		do{
-			if (fc.style)
-				fc.style.display="none";
-		}
-		while(fc = fc.nextSibling);
-		var credits = document.getElementById(obj.id + "credits");
-		if (credits) credits.style.display = "block";
-		var anim = document.getElementById("animations");
-		while (anim.firstChild.nextSibling.nextSibling) {
-			anim.removeChild(anim.firstChild.nextSibling.nextSibling);
-		}
+		/*
 		var animations = obj.getAnimations();
 		for (var i = 0; i < animations.length; i++){
 			var ele = document.createElement("div");
@@ -277,46 +328,27 @@ XMLdoc.onLoad = function(){
 			};
 			anim.appendChild(ele);
 		}
-	}
-	//when model loaded get animations
-	model.addEventListener("loaded",function(data){
-	selectObject(this);
-	});
-	
-	
-	var lastPick=null;
-	var selectstart=null;
-	var picking = function() {
-		if (!mousechange)
-			return;
-		var result = scene.pick(mousePos[0],mousePos[1]);
-		if (result && result.object.id) {
-			if(!result.object.mat)
-				result.object.mat = result.object.getMaterial();
-			if(lastPick != result.object) {
-				if(lastPick) lastPick.setMaterial(lastPick.mat);
-				lastPick = result.object;
-				canvas.style.cursor = "pointer";
-				result.object.setMaterial(highlight);
-			}
-		}
-		else {
-			if(lastPick) lastPick.setMaterial(lastPick.mat);
-			lastPick = null;
-			canvas.style.cursor="default";
-		}
-		if(mousestate == 1)
-			selectstart = lastPick;
-		if(lastPick && mousestate == 0 && selectstart == lastPick)
-			selectObject(lastPick);
-		mousechange=false;
+		*/
 	};
+	
+	//when model loaded get animations
+	/*
+	model.addEventListener("loaded",function(data){
+		selectObject(this);
+	});
 	*/
+	
 	$(window).resize();
+	
 	setInterval(function() {
 		var now=+new Date;
-		//picking();
+		keyboardCheck();
+		mouseCheck();
 		renderer.render();
+		if (debug != '' && debug != $('#infopan').text()) {
+			$('#infopan').html(debug);
+		}
+		debug = '';
 		lasttime=now;
 		
 		//requestAnimationFrame(render);
@@ -329,129 +361,3 @@ XMLdoc.onLoad = function(){
 };
 
 XMLdoc.load("res/test/stage.xml");
-
-
-
-
-
-/* 
-RTS Camera Controller
-By Wyko ter Haar
-Moves the camera within the bounds of the map variables.
-An origin point of 0,0 is assumed. 
-*/
-/*
-// The camera bounds
-var mapMinX;
-var mapMinZ;
-var mapMaxX;
-var mapMaxZ;
-
-// Zoom limits for the camera
-var mapMaxY = 9.5;
-var mapMinY = 4;
-
-var scrollArea = 10; // Defines the distance from the edge of the window that mouse scrolling starts
-var scrollSpeed = 22; // Defines how fast the window scrolls
-
-
-// Translates the camera
-function moveMe(myDir, mySpeed) {
-	
-	switch (myDir)
-	{
-		case ("Left") :
-			myVector = (Vector3(mySpeed,0,0) * scrollSpeed * Time.deltaTime);
-			break;
-			
-		case ("Right") : 	
-			myVector = (Vector3(mySpeed,0,0) * scrollSpeed * Time.deltaTime);		
-			break;
-			
-		case ("Forwards") : 		
-			myVector = (Vector3(0,0,mySpeed) * scrollSpeed * Time.deltaTime);		
-			break;
-			
-		case ("Backwards") : 	
-			myVector = (Vector3(0,0,mySpeed) * scrollSpeed * Time.deltaTime);		
-			break;
-			
-		case ("Up") :
-			myVector = (Vector3(0,mySpeed,0));		
-			break;
-		
-		case ("Down") :
-			myVector = (Vector3(0,mySpeed,0));		
-			break;
-		
-		default : Debug.Log("Can't Move.");
-	}
-	
-	if (InBounds(myVector))
-		{transform.Translate(myVector, Space.World);}
-
-		
-	
-}
-	
-function Update () {
-	
-	var mPosX = Input.mousePosition.x;
-	var mPosY = Input.mousePosition.y;
-	
-
-	// Do camera movement by mouse position
-	if (mPosX < scrollArea) {moveMe("Left", -1);}
-	if (mPosX >= Screen.width-scrollArea) {moveMe("Right", 1);}
-	if (mPosY >= Screen.height-scrollArea) {moveMe("Forwards", 1);}
-	if (mPosY < scrollArea) {moveMe("Backwards", -1);} 
-	
-	// Do camera movement by keyboard
-	if (Input.GetAxis("Horizontal") < 0) {moveMe("Left", Input.GetAxis("Horizontal"));}
-	if (Input.GetAxis("Horizontal") > 0) {moveMe("Right", Input.GetAxis("Horizontal"));}
-	if (Input.GetAxis("Vertical") > 0) {moveMe("Forwards", Input.GetAxis("Vertical"));}
-	if (Input.GetAxis("Vertical") < 0) {moveMe("Backwards", Input.GetAxis("Vertical"));}
-	
-	// Zoom Camera in or out
-	if (Input.GetAxis("Mouse ScrollWheel") < 0) {
-		moveMe("Up", .2);
-	}
-	if (Input.GetAxis("Mouse ScrollWheel") > 0) {
-		moveMe("Down", -.2);
-	}
-}
-
-// Checks to see if the camera would be in bounds after the move
-// if not, it brings the camera back to the edge of the bounds
-function InBounds(vector) {
-	var answer = true;
-	
-	if ((transform.position.x + vector.x) < mapMinX) {
-		transform.position.x = mapMinX;
-		answer = false;
-	}
-	if ((transform.position.z + vector.z) < mapMinZ) {
-		transform.position.z = mapMinZ;
-		answer = false;
-	}
-	if ((transform.position.x + vector.x) > mapMaxX) {
-		transform.position.x = mapMaxX;
-		answer = false;
-	}
-	if ((transform.position.z + vector.z) > mapMaxZ) {
-		transform.position.z = mapMaxZ;
-		answer = false;
-	}
-	if ((transform.position.y + vector.y) > mapMaxY) {
-		transform.position.y = mapMaxY;
-		answer = false;
-	}
-	
-	if ((transform.position.y + vector.y) < mapMinY) {
-		transform.position.y = mapMinY;
-		answer = false;
-	}
-	
-	return answer;
-}
-*/

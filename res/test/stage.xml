@@ -29,12 +29,17 @@
     <material id="green" specular="0" color="#0f0" shadeless="1" />
     <material id="blue" specular="0" color="#00f" shadeless="1" />
     <material id="lines" specular="0" color="#777" shadeless="1" />
-    <material id="highlight" specular="0" color="#ff0" shadeless="0" emit="#550" />
+    <material id="highlight" specular="0" color="#ff0" shadeless="0" emit="#550" /> 
     
     <material id="selectMat" specular="0" emit="green">
         <texture id="selectTex" src="images/select.png" />
         <material_layer texture="#selectTex" mapinput="UV1" mapto="M_COLOR" />
         <material_layer texture="#selectTex" mapinput="UV1" mapto="M_ALPHA" />
+    </material>
+    
+    <material id="mat8" specular="0">
+        <texture id="goblincolour" src="models/goblin/skin.jpg" />
+        <material_layer texture="#goblincolour" mapinput="UV1" mapto="M_COLOR" />
     </material>
     
     <animation_vector id="pulse" frames="24">
@@ -44,23 +49,28 @@
             <linear_point x="24" y="0.01" />
         </animation_curve>
     </animation_vector>
+    
     <scene id="mainScene" ambient_color="#333" background_color="#888" fog_near="100" fog_far="240" fog_color="#888" fog_type="FOG_QUADRATIC" camera="#mainCamera">
         <group id="graph">
-            <object id="xaxis" draw_type="DRAW_LINES" line_width="2" mesh="#xline" material="#red"  />
-            <object id="yaxis" draw_type="DRAW_LINES" line_width="2" mesh="#yline" material="#green"  />
-            <object id="zaxis" draw_type="DRAW_LINES" line_width="2" mesh="#zline" material="#blue"  />
+            <object id="xaxis" draw_type="DRAW_LINES" line_width="2" mesh="#xline" material="#red" />
+            <object id="yaxis" draw_type="DRAW_LINES" line_width="2" mesh="#yline" material="#green" />
+            <object id="zaxis" draw_type="DRAW_LINES" line_width="2" mesh="#zline" material="#blue" />
         </group>
+        
         <group id="cameraOffset">
             <!-- <camera id="mainCamera" rot_order="ROT_XZY" loc_x="0" loc_y="500" loc_z="450" rot_x="-0.7" rot_y="0" rot_z="0" /> -->
             <camera id="mainCamera" rot_order="ROT_XZY" loc_x="0" loc_y="0" loc_z="40" rot_x="-0.7" />
         </group>
+        
         <group id="cusrsor" loc_x="0" loc_z="0">
             <object mesh="#groundMesh" material="#selectMat" animation="#pulse" ztransparent="TRUE" rot_x="1.57" loc_y="0" scale="1.5" />
         </group>
-    
+        
+        <collada document="models/us_soldier/us_soldier.dae" id="soldier" scale="0.1" />
+        <MD2 id="goblin" src="models/goblin/goblin.md2" MD2_animation="stand" material="#mat8" />
         
         <light id="light" loc_x="0" loc_y="20" loc_z="10" rot_x="0" rot_y="1.57" attenuation_constant="0.9" type="L_DIR" />
         <light id="light" loc_x="-10" loc_y="20" loc_z="-5" rot_x="-1.3" attenuation_constant="5" type="L_POINT" />
-        <light id="light" loc_x="-10" loc_y="20" loc_z="10" rot_x="-1.3" attenuation_constant="5" type="L_POINT" />
+        <light id="light" loc_x="-10" loc_y="20" loc_z="10" rot_x="-1.3" attenuation_constant="5" type="L_POINT" /> 
     </scene>
 </glge>
