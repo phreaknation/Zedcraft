@@ -1,0 +1,4 @@
+@CHARSET "ISO-8859-1";
+section, article, aside, footer, header, nav, hgroup {  
+    display:block;  
+}

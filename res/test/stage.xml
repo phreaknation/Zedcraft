@@ -50,7 +50,7 @@
         </animation_curve>
     </animation_vector>
     
-    <scene id="mainScene" ambient_color="#333" background_color="#888" fog_near="100" fog_far="240" fog_color="#888" fog_type="FOG_QUADRATIC" camera="#mainCamera">
+    <scene id="mainScene" ambient_color="#333" background_color="#888" fog_near="500" fog_far="800" fog_color="#888" fog_type="FOG_QUADRATIC" camera="#mainCamera">
         <group id="graph">
             <object id="xaxis" draw_type="DRAW_LINES" line_width="2" mesh="#xline" material="#red" />
             <object id="yaxis" draw_type="DRAW_LINES" line_width="2" mesh="#yline" material="#green" />
@@ -66,11 +66,15 @@
             <object mesh="#groundMesh" material="#selectMat" animation="#pulse" ztransparent="TRUE" rot_x="1.57" loc_y="0" scale="1.5" />
         </group>
         
-        <collada document="models/us_soldier/us_soldier.dae" id="soldier" scale="0.1" />
+        <collada id="soldier1" document="models/us_soldier/us_soldier.dae" scale="0.1" locX="-10" locZ="25" />
+        <collada id="soldier2" document="models/us_soldier/us_soldier.dae" scale="0.1" locX="-5" locZ="25" />
+        <collada id="soldier3" document="models/us_soldier/us_soldier.dae" scale="0.1" locX="0" locZ="25" />
+        <collada id="soldier4" document="models/us_soldier/us_soldier.dae" scale="0.1" locX="5" locZ="25" />
+        <collada id="soldier5" document="models/us_soldier/us_soldier.dae" scale="0.1" locX="10" locZ="25" />
         <MD2 id="goblin" src="models/goblin/goblin.md2" MD2_animation="stand" material="#mat8" />
         
-        <light id="light" loc_x="0" loc_y="20" loc_z="10" rot_x="0" rot_y="1.57" attenuation_constant="0.9" type="L_DIR" />
-        <light id="light" loc_x="-10" loc_y="20" loc_z="-5" rot_x="-1.3" attenuation_constant="5" type="L_POINT" />
-        <light id="light" loc_x="-10" loc_y="20" loc_z="10" rot_x="-1.3" attenuation_constant="5" type="L_POINT" /> 
+        <light id="light" loc_x="0" loc_y="20" loc_z="30" rot_x="0" rot_y="1.57" attenuation_constant="0.9" type="L_DIR" />
+        <light id="light" loc_x="10" loc_y="20" loc_z="27" rot_x="-1.3" attenuation_constant="5" type="L_POINT" />
+        <light id="light" loc_x="-10" loc_y="20" loc_z="27" rot_x="-1.3" attenuation_constant="5" type="L_POINT" /> 
     </scene>
 </glge>

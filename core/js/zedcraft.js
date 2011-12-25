@@ -101,6 +101,7 @@ var drawGrid = function(size) {
 	
 	var line = (new GLGE.Object).setDrawType(GLGE.DRAW_LINES);
 	line.setMesh((new GLGE.Mesh).setPositions(positions));
+	line.setPickable(false);
 	line.setMaterial(XMLdoc.getElement("lines"));
 	scene.addObject(line);
 	delete(line);
@@ -118,9 +119,10 @@ XMLdoc.onLoad = function() {
 	zoom = parseInt(60);
 	cameraPos = [parseInt(objects['cameras']['mainCamera'].getLocX()), 60, parseInt(objects['cameras']['mainCamera'].getLocZ())];
 	
-	var model = XMLdoc.getElement( "goblin" );
-	var highlight = XMLdoc.getElement( "highlight" );
-	var cusrsor = XMLdoc.getElement( "cusrsor" ); 
+	
+	var soldier1 = XMLdoc.getElement("soldier1");
+	var highlight = XMLdoc.getElement("highlight");
+	var cusrsor = XMLdoc.getElement("cusrsor");
 	
 	var mouse = new GLGE.MouseInput(canvas);
 	var keys = new GLGE.KeyInput();
@@ -182,9 +184,8 @@ XMLdoc.onLoad = function() {
 		for (button in mouseButtons) {
 			if (mouse.isButtonDown(button))
 				debug += 'Mouse Button ' + button + ': ' + mouse.isButtonDown(button) + '<br />';
-			
-				if (mouse.isButtonDown(0))
-					picking();
+				if (lastPick && mouse.isButtonDown(0)==0 && selectstart==lastPick)
+					selectObject(lastPick);
 		}
 		
 		// -------------------------------------------------------- Mouse Wheel --------------------------------------------------------
@@ -271,6 +272,21 @@ XMLdoc.onLoad = function() {
 		if (!mouseEnabled)
 			return;
 		
+		/*
+		if (mousePos['x'] && mousePos['y']) {
+			var obj = scene.pick(mousePos['x'],mousePos['y']);
+			if (obj && obj != selectedObject) {
+				if (obj.getId() && obj.getId() != "wallobject") {
+					obj.oldmaterial = obj.getMaterial();
+					obj.setMaterial(highlight);
+				}
+				if (selectedObject && selectedObject.getId() != "wallobject")
+					selectedObject.setMaterial(selectedObject.oldmaterial);
+				selectedObject = obj;
+			}
+		}
+		*/
+		/*
 		var result = scene.pick(mousePos['x'], mousePos['y']);
 		if (result && result.object.id) {
 			if (!result.object.mat)
@@ -301,22 +317,19 @@ XMLdoc.onLoad = function() {
 			lastPick = null;
 			canvas.style.cursor="default";
 		}
-		/*
-		if (mouseEnabled)
-			selectstart = lastPick;
-		if(lastPick && mouseEnabled == false && selectstart == lastPick)
-			selectObject(lastPick);
+		
+		selectstart = lastPick;
 		*/
 	};
 	
-	var selectObject = function(obj) {
+	function selectObject(obj) {
 		if(obj == selectedObject)
 			return;
 		selectedObject = obj;
 		cusrsor.blendTo({
 			LocX:obj.getLocX(),
 			LocZ:obj.getLocZ()
-		}, 1000);
+		}, 200);
 		/*
 		var animations = obj.getAnimations();
 		for (var i = 0; i < animations.length; i++){
@@ -332,18 +345,19 @@ XMLdoc.onLoad = function() {
 	};
 	
 	//when model loaded get animations
-	/*
-	model.addEventListener("loaded",function(data){
+	
+	soldier1.addEventListener("loaded",function(data){
 		selectObject(this);
 	});
-	*/
+	
 	
 	$(window).resize();
-	
+
 	setInterval(function() {
 		var now=+new Date;
 		keyboardCheck();
 		mouseCheck();
+		picking();
 		renderer.render();
 		if (debug != '' && debug != $('#infopan').text()) {
 			$('#infopan').html(debug);
